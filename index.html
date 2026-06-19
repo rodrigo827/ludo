@@ -1,0 +1,113 @@
+ <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Ludo</title>
+<style>
+  body { 
+    font-family: Arial, sans-serif; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    background: #2c3e50; 
+    color: white; 
+    margin: 0; 
+    padding: 20px;
+  }
+  .game { 
+    display: grid; 
+    grid-template-columns: repeat(15, 30px); 
+    grid-template-rows: repeat(15, 30px); 
+    gap: 1px; 
+    background: #34495e; 
+    border: 3px solid #ecf0f1;
+  }
+  .cell { 
+    width: 30px; 
+    height: 30px; 
+    background: #ecf0f1; 
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+  }
+  .red { background: #e74c3c; }
+  .green { background: #2ecc71; }
+  .yellow { background: #f1c40f; }
+  .blue { background: #3498db; }
+  .home { background: #7f8c8d; }
+  .safe { background: #bdc3c7; }
+  .center { background: #34495e; }
+  .piece { 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    position: absolute; 
+    border: 2px solid #2c3e50; 
+    cursor: pointer;
+    z-index: 10;
+  }
+  .piece.red-piece { background: #c0392b; }
+  .piece.green-piece { background: #27ae60; }
+  .piece.yellow-piece { background: #f39c12; }
+  .piece.blue-piece { background: #2980b9; }
+  .controls { 
+    margin: 20px; 
+    text-align: center;
+  }
+  button { 
+    padding: 10px 20px; 
+    font-size: 16px; 
+    cursor: pointer; 
+    background: #1abc9c; 
+    border: none; 
+    color: white; 
+    border-radius: 5px;
+    margin: 5px;
+  }
+  button:disabled { background: #7f8c8d; cursor: not-allowed; }
+  #dice { font-size: 24px; margin: 10px; }
+  #turn { font-weight: bold; font-size: 18px; }
+</style>
+</head>
+<body>
+<h1>Ludo</h1>
+<div id="turn">Vez do: Vermelho</div>
+<div id="dice">🎲 Clique em Rolar Dado</div>
+<div class="game" id="board"></div>
+<div class="controls">
+  <button id="roll">Rolar Dado</button>
+  <button id="reset">Reiniciar</button>
+</div>
+
+<script>
+const board = document.getElementById('board');
+const colors = ['red', 'green', 'yellow', 'blue'];
+let currentPlayer = 0;
+let diceValue = 0;
+let canRoll = true;
+
+// Mapa básico do tabuleiro 15x15
+const layout = [
+  'rrrrrrcccgggggg',
+  'rrrrrrcccgggggg',
+  'rrrrrrcccgggggg',
+  'rrrrrrcccgggggg',
+  'rrrrrrcccgggggg',
+  'rrrrrrcccgggggg',
+  'ccccccchhcccccc',
+  'ccchhhhhhhhcccc',
+  'ccccccchhcccccc',
+  'bbbbbbcccyyyyyy',
+  'bbbbbbcccyyyyyy',
+  'bbbbbbcccyyyyyy',
+  'bbbbbbcccyyyyyy',
+  'bbbbbbcccyyyyyy',
+  'bbbbbbcccyyyyyy'
+];
+
+const path = [
+  // Caminho simplificado - 52 casas + retas finais
+  [6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],
+  [1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6
