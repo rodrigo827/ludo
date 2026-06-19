@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -183,12 +183,11 @@
         const resetButton = document.getElementById('reset');
 
         const colors = ['Vermelho', 'Verde', 'Amarelo', 'Azul'];
-        let currentPlayer = 0; // 0: Vermelho, 1: Verde, 2: Amarelo, 3: Azul
+        let currentPlayer = 0; 
         let diceValue = 0;
         let canRoll = true;
         let hasMoved = false;
 
-        // Mapa visual estático do fundo do tabuleiro 15x15
         const layout = [
             'rrrrrrcccgggggg',
             'rrrrrrcccgggggg',
@@ -207,49 +206,44 @@
             'bbbbbbcccyyyyyy'
         ];
 
-        // 1. CIRCUITO COMUM (52 casas externas onde todos andam)
-        // Começa em [6,1] (saída do vermelho) e dá a volta em sentido horário
         const commonTrack = [
             [6,1],[6,2],[6,3],[6,4],[6,5],
             [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
-            [0,7], // Topo meio
+            [0,7], 
             [0,8],[1,8],[2,8],[3,8],[4,8],[5,8],
             [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],
-            [7,14], // Direita meio
+            [7,14], 
             [8,14],[8,13],[8,12],[8,11],[8,10],[8,9],
             [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
-            [14,7], // Base meio
+            [14,7], 
             [14,6],[13,6],[12,6],[11,6],[10,6],[9,6],
             [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
-            [7,0] // Esquerda meio
+            [7,0] 
         ];
 
-        // Índices de início no circuito comum para cada cor e suas respectivas retas finais individuais
         const playerPaths = {
-            0: { // Vermelho
+            0: { 
                 startTrackIndex: 0, 
                 endTrackIndex: 50,
                 homeStraight: [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]]
             },
-            1: { // Verde
+            1: { 
                 startTrackIndex: 13,
                 endTrackIndex: 11,
                 homeStraight: [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]]
             },
-            2: { // Amarelo
+            2: { 
                 startTrackIndex: 26,
                 endTrackIndex: 24,
                 homeStraight: [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]]
             },
-            3: { // Azul
+            3: { 
                 startTrackIndex: 39,
                 endTrackIndex: 37,
                 homeStraight: [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
             }
         };
 
-        // Estado dinâmico das peças
-        // step: -1 significa na base. 0 a 50 é o progresso na pista comum. 51+ é a reta final.
         const pieces = [
             { id: 0, player: 0, color: 'red-piece', baseRow: 2, baseCol: 2, row: 2, col: 2, step: -1 },
             { id: 1, player: 1, color: 'green-piece', baseRow: 2, baseCol: 12, row: 2, col: 12, step: -1 },
@@ -259,7 +253,6 @@
 
         const cellClassMap = { 'r': 'red', 'g': 'green', 'y': 'yellow', 'b': 'blue', 'h': 'home', 'c': 'center' };
 
-        // Renderiza as células do tabuleiro estático
         function createBoard() {
             board.innerHTML = '';
             for (let r = 0; r < 15; r++) {
@@ -279,9 +272,7 @@
             updateTurnDisplay();
         }
 
-        // Posiciona visualmente os bonecos no tabuleiro de acordo com as coordenadas atuais (row, col)
         function renderPieces() {
-            // Remove peças existentes para evitar duplicatas
             document.querySelectorAll('.piece').forEach(p => p.remove());
 
             pieces.forEach(pieceData => {
@@ -291,12 +282,10 @@
                     pieceElement.classList.add('piece', pieceData.color);
                     pieceElement.dataset.id = pieceData.id;
 
-                    // Se for a vez do dono da peça e ele puder mover, destaca a peça
                     if (!canRoll && !hasMoved && pieceData.player === currentPlayer && canPieceMove(pieceData, diceValue)) {
                         pieceElement.classList.add('movable');
                     }
 
-                    // Evento de clique para mover o boneco
                     pieceElement.addEventListener('click', () => {
                         if (!canRoll && !hasMoved && pieceData.player === currentPlayer) {
                             movePiece(pieceData, diceValue);
@@ -308,44 +297,35 @@
             });
         }
 
-        // Verifica se uma peça específica consegue se mover com o valor do dado sorteado
         function canPieceMove(piece, steps) {
             if (piece.step === -1) {
-                // Para sair da base, precisa tirar exatamente 6 no dado
                 return steps === 6;
             }
-            
-            // O caminho máximo total é 51 passos na pista comum + 6 passos na reta final (total 57)
             if (piece.step + steps > 57) {
-                return false; // Passou do centro, movimento inválido
+                return false; 
             }
             return true;
         }
 
-        // Faz a movimentação lógica do boneco e atualiza as coordenadas
         function movePiece(piece, steps) {
             if (!canPieceMove(piece, steps)) return;
 
             if (piece.step === -1 && steps === 6) {
-                // Sai da base para a casa inicial correspondente
                 piece.step = 0;
             } else {
                 piece.step += steps;
             }
 
-            // Atualiza as linhas e colunas com base no progresso (step)
             const pathInfo = playerPaths[piece.player];
             if (piece.step === -1) {
                 piece.row = piece.baseRow;
                 piece.col = piece.baseCol;
             } else if (piece.step <= 51) {
-                // Caminhando na pista comum calculando o deslocamento circular do vetor
                 const currentTrackIndex = (pathInfo.startTrackIndex + piece.step) % commonTrack.length;
                 const coords = commonTrack[currentTrackIndex];
                 piece.row = coords[0];
                 piece.col = coords[1];
             } else {
-                // Caminhando na reta final rumo ao objetivo
                 const straightIndex = piece.step - 52;
                 const coords = pathInfo.homeStraight[straightIndex];
                 piece.row = coords[0];
@@ -355,13 +335,12 @@
             hasMoved = true;
             renderPieces();
 
-            // Regra clássica: Tirar um 6 confere direito a nova rolagem
             if (steps === 6) {
                 turnDisplay.textContent = `${colors[currentPlayer]} tirou 6 e joga novamente!`;
                 canRoll = true;
                 rollButton.disabled = false;
+                renderPieces(); // Mantém o estado atualizado para a rolagem bônus
             } else {
-                // Passa o turno para o próximo jogador
                 setTimeout(() => {
                     currentPlayer = (currentPlayer + 1) % 4;
                     nextTurn();
@@ -384,9 +363,9 @@
             canRoll = true;
             rollButton.disabled = false;
             updateTurnDisplay();
+            renderPieces(); // Limpa e atualiza o estado visual para o próximo turno
         }
 
-        // Função para rolar o dado
         rollButton.addEventListener('click', () => {
             if (!canRoll) return;
 
@@ -399,7 +378,6 @@
                 const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
                 diceDisplay.textContent = diceEmojis[diceValue - 1];
 
-                // Varre se o jogador atual possui movimentos válidos disponíveis
                 const anyMovable = pieces.some(p => p.player === currentPlayer && canPieceMove(p, diceValue));
 
                 if (!anyMovable) {
@@ -410,12 +388,11 @@
                     }, 1500);
                 } else {
                     turnDisplay.textContent = `Clique na sua peça piscante para mover ${diceValue} casas!`;
-                    renderPieces(); // Atualiza para destacar e ativar cliques nos bonecos
+                    renderPieces(); // Ativa o efeito visual luminoso na peça que pode se mover
                 }
             }, 500);
         });
 
-        // Função para reiniciar o jogo completo
         resetButton.addEventListener('click', () => {
             currentPlayer = 0;
             diceValue = 0;
@@ -424,7 +401,6 @@
             rollButton.disabled = false;
             diceDisplay.textContent = '🎲';
             
-            // Retorna todas as peças para suas respectivas bases
             pieces.forEach(p => {
                 p.step = -1;
                 p.row = p.baseRow;
@@ -434,7 +410,6 @@
             createBoard();
         });
 
-        // Inicializa o jogo
         createBoard();
     </script>
 </body>
