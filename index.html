@@ -1,1 +1,55 @@
- 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Site de Ludo</title>
+    <style>
+        /* Estilos Globais da Página */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #2c3e50;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        /* Área do Jogo */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Estilos do Tabuleiro de Ludo */
+        .game {
+            display: grid;
+            grid-template-columns: repeat(15, 30px);
+            grid-template-rows: repeat(15, 30px);
+            gap: 1px;
+            background: #7f8c8d; 
+            border: 3px solid #ecf0f1;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 30px
