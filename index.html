@@ -40,19 +40,23 @@
   .home { background: #7f8c8d; }
   .safe { background: #bdc3c7; }
   .center { background: #34495e; }
+  
+  /* Estilização dos bonecos/peças */
   .piece { 
-    width: 20px; 
-    height: 20px; 
+    width: 22px; 
+    height: 22px; 
     border-radius: 50%; 
     position: absolute; 
-    border: 2px solid #2c3e50; 
+    border: 2px solid white; 
     cursor: pointer;
     z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
-  .piece.red-piece { background: #c0392b; }
-  .piece.green-piece { background: #27ae60; }
-  .piece.yellow-piece { background: #f39c12; }
-  .piece.blue-piece { background: #2980b9; }
+  .piece.red-piece { background: #962d22; }
+  .piece.green-piece { background: #1e7e34; }
+  .piece.yellow-piece { background: #d39e00; }
+  .piece.blue-piece { background: #1d68a7; }
+
   .controls { 
     margin: 20px; 
     text-align: center;
@@ -94,7 +98,7 @@ let currentPlayer = 0;
 let diceValue = 0;
 let canRoll = true;
 
-// Mapa básico do tabuleiro 15x15
+// Mapa do tabuleiro 15x15
 const layout = [
   'rrrrrrcccgggggg',
   'rrrrrrcccgggggg',
@@ -113,13 +117,15 @@ const layout = [
   'bbbbbbcccyyyyyy'
 ];
 
-// Corrigido e fechado o array que estava cortado
-const path = [
-  [6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],
-  [1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10]
+// Coordenadas iniciais para posicionar 1 boneco em cada base colorida
+const initialPieces = [
+  { color: 'red-piece', row: 2, col: 2 },
+  { color: 'green-piece', row: 2, col: 12 },
+  { color: 'blue-piece', row: 12, col: 2 },
+  { color: 'yellow-piece', row: 12, col: 12 }
 ];
 
-// Gerar o tabuleiro visual na tela
+// Gerar o tabuleiro visual e inserir os bonecos nas posições corretas
 function createBoard() {
   board.innerHTML = '';
   for (let r = 0; r < 15; r++) {
@@ -127,13 +133,21 @@ function createBoard() {
       const cell = document.createElement('div');
       cell.classList.add('cell');
       
-      // Aplicar cores baseadas no layout
+      // Define a cor de fundo da célula de acordo com o layout
       const char = layout[r][c];
       if (char === 'r') cell.classList.add('red');
       if (char === 'g') cell.classList.add('green');
       if (char === 'y') cell.classList.add('yellow');
       if (char === 'b') cell.classList.add('blue');
       if (char === 'h') cell.classList.add('home');
+
+      // Verifica se existe um boneco configurado para esta coordenada (r, c)
+      const pieceData = initialPieces.find(p => p.row === r && p.col === c);
+      if (pieceData) {
+        const piece = document.createElement('div');
+        piece.classList.add('piece', pieceData.color);
+        cell.appendChild(piece);
+      }
       
       board.appendChild(cell);
     }
@@ -144,15 +158,13 @@ function createBoard() {
 rollButton.addEventListener('click', () => {
   if (!canRoll) return;
 
-  // Sorteia um número de 1 a 6
   diceValue = Math.floor(Math.random() * 6) + 1;
   diceDisplay.textContent = `🎲 ${diceValue}`;
   
-  // Impede novos cliques até mudar de turno (simulação básica)
   canRoll = false;
   rollButton.disabled = true;
 
-  // Muda para o próximo jogador depois de 1.5 segundos
+  // Passa a vez após 1.5 segundos
   setTimeout(() => {
     currentPlayer = (currentPlayer + 1) % 4;
     turnDisplay.textContent = `Vez do: ${colors[currentPlayer]}`;
@@ -169,9 +181,10 @@ resetButton.addEventListener('click', () => {
   rollButton.disabled = false;
   diceDisplay.textContent = '🎲 Clique em Rolar Dado';
   turnDisplay.textContent = `Vez do: ${colors[currentPlayer]}`;
+  createBoard(); // Recria o tabuleiro resetando as peças
 });
 
-// Inicializa o jogo
+// Inicializa o jogo gerando o tabuleiro e os bonecos
 createBoard();
 </script>
 </body>
