@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -31,6 +31,7 @@
     align-items: center;
     justify-content: center;
     font-size: 10px;
+    color: #000;
   }
   .red { background: #e74c3c; }
   .green { background: #2ecc71; }
@@ -83,7 +84,12 @@
 
 <script>
 const board = document.getElementById('board');
-const colors = ['red', 'green', 'yellow', 'blue'];
+const diceDisplay = document.getElementById('dice');
+const turnDisplay = document.getElementById('turn');
+const rollButton = document.getElementById('roll');
+const resetButton = document.getElementById('reset');
+
+const colors = ['Vermelho', 'Verde', 'Amarelo', 'Azul'];
 let currentPlayer = 0;
 let diceValue = 0;
 let canRoll = true;
@@ -107,7 +113,66 @@ const layout = [
   'bbbbbbcccyyyyyy'
 ];
 
+// Corrigido e fechado o array que estava cortado
 const path = [
-  // Caminho simplificado - 52 casas + retas finais
   [6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],
-  [1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6
+  [1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10]
+];
+
+// Gerar o tabuleiro visual na tela
+function createBoard() {
+  board.innerHTML = '';
+  for (let r = 0; r < 15; r++) {
+    for (let c = 0; c < 15; c++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      
+      // Aplicar cores baseadas no layout
+      const char = layout[r][c];
+      if (char === 'r') cell.classList.add('red');
+      if (char === 'g') cell.classList.add('green');
+      if (char === 'y') cell.classList.add('yellow');
+      if (char === 'b') cell.classList.add('blue');
+      if (char === 'h') cell.classList.add('home');
+      
+      board.appendChild(cell);
+    }
+  }
+}
+
+// Função para rolar o dado
+rollButton.addEventListener('click', () => {
+  if (!canRoll) return;
+
+  // Sorteia um número de 1 a 6
+  diceValue = Math.floor(Math.random() * 6) + 1;
+  diceDisplay.textContent = `🎲 ${diceValue}`;
+  
+  // Impede novos cliques até mudar de turno (simulação básica)
+  canRoll = false;
+  rollButton.disabled = true;
+
+  // Muda para o próximo jogador depois de 1.5 segundos
+  setTimeout(() => {
+    currentPlayer = (currentPlayer + 1) % 4;
+    turnDisplay.textContent = `Vez do: ${colors[currentPlayer]}`;
+    canRoll = true;
+    rollButton.disabled = false;
+  }, 1500);
+});
+
+// Função para reiniciar
+resetButton.addEventListener('click', () => {
+  currentPlayer = 0;
+  diceValue = 0;
+  canRoll = true;
+  rollButton.disabled = false;
+  diceDisplay.textContent = '🎲 Clique em Rolar Dado';
+  turnDisplay.textContent = `Vez do: ${colors[currentPlayer]}`;
+});
+
+// Inicializa o jogo
+createBoard();
+</script>
+</body>
+</html>
