@@ -1,416 +1,174 @@
- <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Site de Ludo</title>
-    <style>
-        /* Estilos Globais da Página */
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: #2c3e50;
-            color: white;
-            margin: 0;
-            padding: 20px;
-        }
+ import random
 
-        header {
-            margin-bottom: 20px;
-            text-align: center;
-        }
+class Peca:
+    def __init__(self, cor, id_peca, offset_inicial):
+        self.cor = cor
+        self.id = id_peca
+        self.posicao_relativa = -1  # -1 = base, 0 = ponto de partida da cor, 51 = última casa antes da reta final
+        self.posicao_global = -1    # Posição real mapeada no tabuleiro de 0 a 51
+        self.na_base = True
+        self.completou = False
+        self.offset = offset_inicial # Onde a cor entra no tabuleiro global
 
-        h1 {
-            margin: 0;
-            font-size: 2.5em;
-        }
+    def atualizar_posicao_global(self, passos_dados):
+        if self.na_base:
+            self.posicao_global = -1
+            return
+        
+        self.posicao_relativa += passos_dados
+        # Mapeia para o circuito global de 52 casas
+        self.posicao_global = (self.posicao_relativa + self.offset) % 52
 
-        /* Área do Jogo */
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: #34495e;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
 
-        /* Estilos do Tabuleiro de Ludo */
-        .game {
-            display: grid;
-            grid-template-columns: repeat(15, 30px);
-            grid-template-rows: repeat(15, 30px);
-            gap: 1px;
-            background: #7f8c8d; 
-            border: 3px solid #ecf0f1;
-            margin-bottom: 20px;
-        }
+class Jogador:
+    def __init__(self, cor, offset_inicial):
+        self.cor = cor
+        self.pecas = [Peca(cor, i, offset_inicial) for i in range(1, 5)]
 
-        .cell {
-            width: 30px;
-            height: 30px;
-            background: #ecf0f1; 
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
 
-        /* Cores das Áreas */
-        .red { background: #e74c3c; }
-        .green { background: #2ecc71; }
-        .yellow { background: #f1c40f; }
-        .blue { background: #3498db; }
-        .home { background: #bdc3c7; } 
-        .center { background: #ecf0f1; } 
+class JogoLudo:
+    def __init__(self):
+        # Cada cor entra em um ponto diferente do tabuleiro global (espaçadas por 13 casas)
+        self.cores = ["Vermelho", "Verde", "Amarelo", "Azul"]
+        offsets = [0, 13, 26, 39]
+        
+        self.jogadores = [Jogador(cor, offset) for cor, offset in zip(self.cores, offsets)]
+        self.turno_atual = 0
+        self.limite_passos = 51 # Quantidade de casas na pista comum
 
-        /* Estilização dos bonecos/peças */
-        .piece {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            position: absolute;
-            border: 2px solid white;
-            cursor: pointer;
-            z-index: 10;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            transition: transform 0.2s, top 0.2s, left 0.2s;
-        }
+    def rolar_dado(self):
+        return random.randint(1, 6)
 
-        .piece:hover {
-            transform: scale(1.2);
-        }
-
-        /* Destaque para quando a peça puder se mover */
-        .piece.movable {
-            animation: bounce 0.5s infinite alternate;
-            border-color: #00ffff;
-            box-shadow: 0 0 8px #00ffff;
-        }
-
-        @keyframes bounce {
-            from { transform: scale(1); }
-            to { transform: scale(1.2); }
-        }
-
-        /* Cores das Peças */
-        .piece.red-piece { background: #c0392b; }
-        .piece.green-piece { background: #27ae60; }
-        .piece.yellow-piece { background: #f39c12; }
-        .piece.blue-piece { background: #2980b9; }
-
-        /* Painel de Controle */
-        .controls {
-            text-align: center;
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        #turn {
-            font-weight: bold;
-            font-size: 1.2em;
-            margin-bottom: 10px;
-        }
-
-        #dice {
-            font-size: 3em;
-            margin: 15px 0;
-            min-height: 1.2em; 
-        }
-
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            background: #1abc9c;
-            border: none;
-            color: white;
-            border-radius: 5px;
-            margin: 5px;
-            transition: background 0.3s;
-        }
-
-        button:hover:not(:disabled) {
-            background: #16a085;
-        }
-
-        button:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-
-        footer {
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: #bdc3c7;
-        }
-    </style>
-</head>
-<body>
-
-    <header>
-        <h1>Ludo Clássico</h1>
-    </header>
-
-    <div class="game-container">
-        <div class="game" id="board"></div>
-
-        <div class="controls">
-            <div id="turn">Aguardando início...</div>
-            <div id="dice">🎲</div>
-            <button id="roll">Rolar Dado</button>
-            <button id="reset">Reiniciar Jogo</button>
-        </div>
-    </div>
-
-    <footer>
-        <p>&copy; 2026 Meu Site de Ludo. Todos os direitos reservados.</p>
-    </footer>
-
-    <script>
-        const board = document.getElementById('board');
-        const diceDisplay = document.getElementById('dice');
-        const turnDisplay = document.getElementById('turn');
-        const rollButton = document.getElementById('roll');
-        const resetButton = document.getElementById('reset');
-
-        const colors = ['Vermelho', 'Verde', 'Amarelo', 'Azul'];
-        let currentPlayer = 0; 
-        let diceValue = 0;
-        let canRoll = true;
-        let hasMoved = false;
-
-        const layout = [
-            'rrrrrrcccgggggg',
-            'rrrrrrcccgggggg',
-            'rrrrrrcccgggggg',
-            'rrrrrrcccgggggg',
-            'rrrrrrcccgggggg',
-            'rrrrrrcccgggggg',
-            'ccccccchhcccccc',
-            'ccchhhhhhhhcccc',
-            'ccccccchhcccccc',
-            'bbbbbbcccyyyyyy',
-            'bbbbbbcccyyyyyy',
-            'bbbbbbcccyyyyyy',
-            'bbbbbbcccyyyyyy',
-            'bbbbbbcccyyyyyy',
-            'bbbbbbcccyyyyyy'
-        ];
-
-        const commonTrack = [
-            [6,1],[6,2],[6,3],[6,4],[6,5],
-            [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
-            [0,7], 
-            [0,8],[1,8],[2,8],[3,8],[4,8],[5,8],
-            [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],
-            [7,14], 
-            [8,14],[8,13],[8,12],[8,11],[8,10],[8,9],
-            [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
-            [14,7], 
-            [14,6],[13,6],[12,6],[11,6],[10,6],[9,6],
-            [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
-            [7,0] 
-        ];
-
-        const playerPaths = {
-            0: { 
-                startTrackIndex: 0, 
-                endTrackIndex: 50,
-                homeStraight: [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]]
-            },
-            1: { 
-                startTrackIndex: 13,
-                endTrackIndex: 11,
-                homeStraight: [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]]
-            },
-            2: { 
-                startTrackIndex: 26,
-                endTrackIndex: 24,
-                homeStraight: [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]]
-            },
-            3: { 
-                startTrackIndex: 39,
-                endTrackIndex: 37,
-                homeStraight: [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
-            }
-        };
-
-        const pieces = [
-            { id: 0, player: 0, color: 'red-piece', baseRow: 2, baseCol: 2, row: 2, col: 2, step: -1 },
-            { id: 1, player: 1, color: 'green-piece', baseRow: 2, baseCol: 12, row: 2, col: 12, step: -1 },
-            { id: 2, player: 2, color: 'yellow-piece', baseRow: 12, baseCol: 12, row: 12, col: 12, step: -1 },
-            { id: 3, player: 3, color: 'blue-piece', baseRow: 12, baseCol: 2, row: 12, col: 2, step: -1 }
-        ];
-
-        const cellClassMap = { 'r': 'red', 'g': 'green', 'y': 'yellow', 'b': 'blue', 'h': 'home', 'c': 'center' };
-
-        function createBoard() {
-            board.innerHTML = '';
-            for (let r = 0; r < 15; r++) {
-                for (let c = 0; c < 15; c++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.row = r;
-                    cell.dataset.col = c;
-                    
-                    const char = layout[r][c];
-                    if (cellClassMap[char]) cell.classList.add(cellClassMap[char]);
-                    
-                    board.appendChild(cell);
-                }
-            }
-            renderPieces();
-            updateTurnDisplay();
-        }
-
-        function renderPieces() {
-            document.querySelectorAll('.piece').forEach(p => p.remove());
-
-            pieces.forEach(pieceData => {
-                const targetCell = document.querySelector(`[data-row="${pieceData.row}"][data-col="${pieceData.col}"]`);
-                if (targetCell) {
-                    const pieceElement = document.createElement('div');
-                    pieceElement.classList.add('piece', pieceData.color);
-                    pieceElement.dataset.id = pieceData.id;
-
-                    if (!canRoll && !hasMoved && pieceData.player === currentPlayer && canPieceMove(pieceData, diceValue)) {
-                        pieceElement.classList.add('movable');
-                    }
-
-                    pieceElement.addEventListener('click', () => {
-                        if (!canRoll && !hasMoved && pieceData.player === currentPlayer) {
-                            movePiece(pieceData, diceValue);
-                        }
-                    });
-
-                    targetCell.appendChild(pieceElement);
-                }
-            });
-        }
-
-        function canPieceMove(piece, steps) {
-            if (piece.step === -1) {
-                return steps === 6;
-            }
-            if (piece.step + steps > 57) {
-                return false; 
-            }
-            return true;
-        }
-
-        function movePiece(piece, steps) {
-            if (!canPieceMove(piece, steps)) return;
-
-            if (piece.step === -1 && steps === 6) {
-                piece.step = 0;
-            } else {
-                piece.step += steps;
-            }
-
-            const pathInfo = playerPaths[piece.player];
-            if (piece.step === -1) {
-                piece.row = piece.baseRow;
-                piece.col = piece.baseCol;
-            } else if (piece.step <= 51) {
-                const currentTrackIndex = (pathInfo.startTrackIndex + piece.step) % commonTrack.length;
-                const coords = commonTrack[currentTrackIndex];
-                piece.row = coords[0];
-                piece.col = coords[1];
-            } else {
-                const straightIndex = piece.step - 52;
-                const coords = pathInfo.homeStraight[straightIndex];
-                piece.row = coords[0];
-                piece.col = coords[1];
-            }
-
-            hasMoved = true;
-            renderPieces();
-
-            if (steps === 6) {
-                turnDisplay.textContent = `${colors[currentPlayer]} tirou 6 e joga novamente!`;
-                canRoll = true;
-                rollButton.disabled = false;
-                renderPieces(); // Mantém o estado atualizado para a rolagem bônus
-            } else {
-                setTimeout(() => {
-                    currentPlayer = (currentPlayer + 1) % 4;
-                    nextTurn();
-                }, 800);
-            }
-        }
-
-        function updateTurnDisplay() {
-            turnDisplay.textContent = `Vez do: ${colors[currentPlayer]}`;
-            turnDisplay.style.color = getPlayerColor(currentPlayer);
-        }
-
-        function getPlayerColor(playerIndex) {
-            const colorMap = { 0: '#e74c3c', 1: '#2ecc71', 2: '#f1c40f', 3: '#3498db' };
-            return colorMap[playerIndex] || 'white';
-        }
-
-        function nextTurn() {
-            hasMoved = false;
-            canRoll = true;
-            rollButton.disabled = false;
-            updateTurnDisplay();
-            renderPieces(); // Limpa e atualiza o estado visual para o próximo turno
-        }
-
-        rollButton.addEventListener('click', () => {
-            if (!canRoll) return;
-
-            diceDisplay.textContent = '🎲...';
-            rollButton.disabled = true;
-            canRoll = false;
-
-            setTimeout(() => {
-                diceValue = Math.floor(Math.random() * 6) + 1;
-                const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-                diceDisplay.textContent = diceEmojis[diceValue - 1];
-
-                const anyMovable = pieces.some(p => p.player === currentPlayer && canPieceMove(p, diceValue));
-
-                if (!anyMovable) {
-                    turnDisplay.textContent = `Sem movimentos para o ${colors[currentPlayer]}. Passando a vez...`;
-                    setTimeout(() => {
-                        currentPlayer = (currentPlayer + 1) % 4;
-                        nextTurn();
-                    }, 1500);
-                } else {
-                    turnDisplay.textContent = `Clique na sua peça piscante para mover ${diceValue} casas!`;
-                    renderPieces(); // Ativa o efeito visual luminoso na peça que pode se mover
-                }
-            }, 500);
-        });
-
-        resetButton.addEventListener('click', () => {
-            currentPlayer = 0;
-            diceValue = 0;
-            canRoll = true;
-            hasMoved = false;
-            rollButton.disabled = false;
-            diceDisplay.textContent = '🎲';
+    def verificar_bloqueios(self, posicao_alvo, cor_jogador):
+        """Retorna True se houver um bloqueio (2 peças de outra cor na mesma casa)"""
+        if posicao_alvo == -1:
+            return False
             
-            pieces.forEach(p => {
-                p.step = -1;
-                p.row = p.baseRow;
-                p.col = p.baseCol;
-            });
+        for j in self.jogadores:
+            if j.cor != cor_jogador:
+                # Conta quantas peças do oponente estão na posição alvo
+                pecas_na_casa = [p for p in j.pecas if p.posicao_global == posicao_alvo and not p.na_base]
+                if len(pecas_na_casa) >= 2:
+                    return True
+        return False
 
-            createBoard();
-        });
+    def checar_e_capturar(self, jogador_atual, peca_movida):
+        """Se cair na casa de uma peça única adversária, captura ela ("come")"""
+        pos_global = peca_movida.posicao_global
+        if pos_global == -1:
+            return
 
-        createBoard();
-    </script>
-</body>
-</html>
+        for j in self.jogadores:
+            if j.cor != jogador_atual.cor:
+                for p_adversaria in j.pecas:
+                    if p_adversaria.posicao_global == pos_global and not p_adversaria.na_base:
+                        print(f"💥 CAPTURA! A {peca_movida.cor} comeu a peça {p_adversaria.id} do {j.cor}!")
+                        p_adversaria.na_base = True
+                        p_adversaria.posicao_relativa = -1
+                        p_adversaria.posicao_global = -1
+
+    def mover_peca(self, jogador, peca, passos):
+        # 1. Regra para sair da base
+        if peca.na_base:
+            if passos == 6:
+                # Verifica bloqueio na casa de saída
+                test_peca = Peca(jogador.cor, 0, peca.offset)
+                test_peca.na_base = False
+                test_peca.atualizar_posicao_global(0)
+                
+                if self.verificar_bloqueios(test_peca.posicao_global, jogador.cor):
+                    print("Não pode sair da base: A casa de saída está bloqueada por adversários!")
+                    return False
+                
+                peca.na_base = False
+                peca.atualizar_posicao_global(0)
+                print(f"A peça {peca.id} saiu da base para o tabuleiro global (Casa {peca.posicao_global})!")
+                return True
+            return False
+
+        # 2. Verificar se o movimento ultrapassa o tabuleiro
+        if peca.posicao_relativa + passos > self.limite_passos:
+            peca.completou = True
+            peca.posicao_global = -1
+            print(f"🎉 Peça {peca.id} chegou ao fim e está segura!")
+            return True
+
+        # 3. Verificar Bloqueios no caminho
+        # Para simplificar, checamos apenas se a casa de *destino* está bloqueada
+        nova_pos_relativa = peca.posicao_relativa + passos
+        nova_pos_global = (nova_pos_relativa + peca.offset) % 52
+        
+        if self.verificar_bloqueios(nova_pos_global, jogador.cor):
+            print(f"Movimento inválido! A casa {nova_pos_global} possui um BLOQUEIO adversário.")
+            return False
+
+        # 4. Efetuar o movimento
+        peca.atualizar_posicao_global(passos)
+        print(f"Peça {peca.id} moveu para a casa global {peca.posicao_global}.")
+
+        # 5. Checar Captura
+        self.checar_e_capturar(jogador, peca)
+        return True
+
+    def iniciar_rodada(self):
+        jogador_atual = self.jogadores[self.turno_atual]
+        print(f"\n--- Turno: {jogador_atual.cor} ---")
+        
+        jogar_novamente = True
+        
+        while jogar_novamente:
+            input(f"[{jogador_atual.cor}] Pressione Enter para rolar o dado...")
+            dado = self.rolar_dado()
+            print(f"🎲 Dado: {dado}")
+
+            # Filtrar jogadas válidas
+            pecas_disponiveis = []
+            for p in ...: # Filtro de peças
+                if not p.completou:
+                    if p.na_base and dado == 6:
+                        pecas_disponiveis.append(p)
+                    elif not p.na_base:
+                        pecas_disponiveis.append(p)
+
+            if not pecas_disponiveis:
+                print("Sem jogadas válidas.")
+                jogar_novamente = False # Passa a vez se não puder mover
+            else:
+                print("Escolha uma peça:")
+                for i, p in enumerate(pecas_disponiveis):
+                    status = "Na Base" if p.na_base else f"Casa Global {p.posicao_global}"
+                    print(f"[{i}] Peça {p.id} ({status})")
+                
+                escolha = -1
+                while escolha < 0 or escolha >= len(pecas_disponiveis):
+                    try:
+                        escolha = int(input("Número da peça: "))
+                    except ValueError: pass
+                
+                movimentos_validos = self.mover_peca(jogador_atual, pecas_disponiveis[escolha], dado)
+
+                # Regra do 6: Se tirou 6 (e fez um movimento válido), joga de novo!
+                if dado == 6 and movimentos_validos:
+                    print("🔥 Você tirou um 6! Joga novamente.")
+                    jogar_novamente = True
+                else:
+                    jogar_novamente = False
+
+        # Verifica vitória
+        if all(p.completou for p in jogador_atual.pecas):
+            print(f"\n🏆 O JOGADOR {jogador_atual.cor} VENCEU O JOGO! 🏆")
+            return True
+
+        # Passa o turno
+        self.turno_atual = (self.turno_atual + 1) % len(self.jogadores)
+        return False
+
+    def jogar(self):
+        print("Ludo Avançado Iniciado!")
+        fim = False
+        while not fim:
+            fim = self.iniciar_rodada()
+
+if __name__ == "__main__":
+    jogo = JogoLudo()
+    jogo.jogar()
